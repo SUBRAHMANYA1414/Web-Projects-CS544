@@ -48,6 +48,10 @@ describe('chowDown', function() {
     assert.equal(results._errors?.[0]?.code, 'NOT_FOUND');
   });
 
+  it ('must find menu items for a specific eid and category', function () {
+    const results = chowDown.menu('5.70', 'Dessert');
+    assert.equal(results.length, 5);
+  });
 
 });	
 
