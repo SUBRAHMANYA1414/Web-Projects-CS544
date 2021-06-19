@@ -22,6 +22,7 @@ class ChowDown {
   /** Create a new ChowDown object for specified eateries */
   constructor(eateries) {
     //TODO
+    this.eateriesList = eateries;
   }
 
   /** return list giving info for eateries having the
@@ -35,7 +36,17 @@ class ChowDown {
    */
   locate(cuisine) {
     //TODO
-    return [];
+
+    const cusionList = this.eateriesList.filter(function (el) {
+        return el.cuisine.toLowerCase() == cuisine.toLowerCase() ;    
+    });
+
+    const eateries = [];
+    cusionList.map(item =>{
+        eateries.push({id:item.id, name:item.name, dist:item.dist})
+    });
+	const sortedList = eateries.sort((a, b) => parseFloat(a.dist) - parseFloat(b.dist));
+    return sortedList;
   }
 
   /** return list of menu categories for eatery having ID eid.  Return
@@ -43,8 +54,15 @@ class ChowDown {
    *  'NOT_FOUND'.
    */
   categories(eid) {
-    //TODO
-    return [];
+    const cusionList = this.eateriesList.filter(function (el) {
+        return el.id == eid ;    
+    });
+    if(cusionList.length > 0){
+      return (Object.keys(cusionList[0].menu));
+    }else{
+      const msg = `bad eatery id ${eid}`;
+      return { _errors: [ new AppError(msg, { code: 'NOT_FOUND', }), ] };
+    }
   }
 
   /** return list of menu-items for eatery eid in the specified
@@ -52,8 +70,22 @@ class ChowDown {
    *  with error object having code property 'NOT_FOUND'.
    */ 
   menu(eid, category) {
-    //TODO
-    return [];
+   const cusionList = this.eateryList.filter(function (el) {
+      return el.id == eid ;    
+    });
+    if(cusionList.length > 0){
+      const menu = cusionList[0].menu;
+      const menuItems = menu[category];
+      if(menuItems){
+        return menuItems;
+      }else{
+        const msg = `bad category ${category}`;
+        return { _errors: [ new AppError(msg, { code: 'NOT_FOUND', }), ] };
+      }
+    }else{
+        const msg = `bad eatery id ${eid}`;
+        return { _errors: [ new AppError(msg, { code: 'NOT_FOUND', }), ] };
+    }
   }
   
 }
