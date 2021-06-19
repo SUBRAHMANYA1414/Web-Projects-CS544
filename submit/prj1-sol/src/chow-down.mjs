@@ -70,7 +70,7 @@ class ChowDown {
    *  with error object having code property 'NOT_FOUND'.
    */ 
   menu(eid, category) {
-   const cusionList = this.eateryList.filter(function (el) {
+   const cusionList = this.eateriesList.filter(function (el) {
       return el.id == eid ;    
     });
     if(cusionList.length > 0){
