@@ -30,6 +30,7 @@ describe('chowDown', function() {
     const results = chowDown.locate('aMeRIcaN');
     assert(results.length > 0);
   });
+
   it ('must find cuisine irrespective of case CAPITALZE ', function () {
     const results = chowDown.locate('MEXICAN');
     assert(results.length > 0);
@@ -62,16 +63,13 @@ describe('chowDown', function() {
     assert.equal(results.length, 5);
   });
 
-  it ('must find menu items for a specific eid and category irrespective of case', function () {
-    const results = chowDown.menu('5.70', 'appetizers');
-    assert.equal(results.length, 13);
-  });
   it ('menu items , must return a NOT_FOUND error for a non-existent eatery', function () {
-    const results = chowDown.menu('5.7', 'appetizers');
+    const results = chowDown.menu('5.7', 'Appetizers');
     assert.equal(results._errors?.[0]?.code, 'NOT_FOUND');
   });
+  
   it ('menu items , must return a NOT_FOUND error for a non-existent category', function () {
-    const results = chowDown.menu('5.70', 'apetizers');
+    const results = chowDown.menu('5.70', 'Apetizers');
     assert.equal(results._errors?.[0]?.code, 'NOT_FOUND');
   });
 
