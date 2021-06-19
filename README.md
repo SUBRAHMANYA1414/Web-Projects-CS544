@@ -4,4 +4,8 @@ Email:		su1@binghamton.edu
 
 Added few test case scenarios to check for menu method also for locate and categories method, its working fine.
 
+Branch : prj1-sol
+
+Navigate to the branch and we can see the required code changes and also the test cases added.
+
 
