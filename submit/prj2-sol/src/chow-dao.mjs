@@ -53,6 +53,8 @@ class ChowDao {
       params._client = await mongo.connect(dbUrl, MONGO_CONNECT_OPTIONS);
       const db = params._client.db();
       params._eateries = db.collection(EATERIES_COLLECTION);
+
+      alert('terst');
       //TODO
     }
     catch (err) {
