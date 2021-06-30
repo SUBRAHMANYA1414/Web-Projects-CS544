@@ -51,10 +51,18 @@ class ChowDao {
     const params = {};
     try {
       params._client = await mongo.connect(dbUrl, MONGO_CONNECT_OPTIONS);
-      const db = params._client.db();
-      params._eateries = db.collection(EATERIES_COLLECTION);
+      //const db = params._client.db();
+     // params._eateries = db.collection(EATERIES_COLLECTION);
 
-      alert('terst');
+      params._client .connect(function(err) {
+        assert.equal(null, err);
+        console.log("Connected successfully to server");
+      
+        this.db =  params._client.db();
+      
+        params._client.close();
+      });
+      
       //TODO
     }
     catch (err) {
@@ -79,7 +87,13 @@ class ChowDao {
   async newOrder(eateryId) {
     try {
       //TODO
-      return {};
+      alert(eateryId);
+      const insertedValue = await this.db.insertOne({eateryId : eateryId});
+
+      return {
+        id : insertedValue.insertedId,
+        eateryId : eateryId 
+      };
     }
     catch (err) {
       const msg = `cannot create new order: ${err}`;
