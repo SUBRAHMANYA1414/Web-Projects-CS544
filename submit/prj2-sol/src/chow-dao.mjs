@@ -1,4 +1,4 @@
-import { AppError,} from './util.mjs';
+import { AppError, } from './util.mjs';
 import params from './params.mjs';
 
 import mongo from 'mongodb';
@@ -7,11 +7,12 @@ import mongo from 'mongodb';
 const MONGO_CONNECT_OPTIONS = { useUnifiedTopology: true };
 
 const EATERIES_COLLECTION = 'eateries';
+const ORDERS_COLLECTION = 'orders';
 //TODO
 
 // properties which are used only within mongo documents and should be
 // removed from returned objects.
-const INTERNALS = [ '_id', '_cuisine', '_location' ];
+const INTERNALS = ['_id', '_cuisine', '_location'];
 
 /** Exported factory method. */
 export default async function make(dbUrl) {
@@ -40,7 +41,7 @@ export default async function make(dbUrl) {
  */
 class ChowDao {
 
-  constructor(params) {  Object.assign(this, params); }
+  constructor(params) { Object.assign(this, params); }
 
   //factory method which performs connection set up async calls
   //and all other necessary initialization, sets up properties
@@ -53,12 +54,14 @@ class ChowDao {
       params._client = await mongo.connect(dbUrl, MONGO_CONNECT_OPTIONS);
       const db = params._client.db();
       params._eateries = db.collection(EATERIES_COLLECTION);
+      params._orders = db.collection(ORDERS_COLLECTION);
       params._id = 1;
+      params._db = db;
       params._genId = new IdGen(params._id);
     }
     catch (err) {
       const msg = `cannot connect to URL "${dbUrl}": ${err}`;
-      return { errors: [ new AppError(msg, { code: 'DB'}) ] };
+      return { errors: [new AppError(msg, { code: 'DB' })] };
     }
     return new ChowDao(params);
   }
@@ -74,35 +77,46 @@ class ChowDao {
    *  field set to an ID different from that of any existing order.
    *  The order-id should be hard to guess.
    *  Returns an object with errors property if db errors encountered.
-   */ 
+   */
   async newOrder(eateryId) {
-    try {
-      if(eateryId == 0){
-        throw "eateryId should not be 0";
+
+    const insertId = await this._nextOrderId();
+
+    const insert = {
+      _id: insertId,
+      id:insertId,
+      eateryId: eateryId,
+      items: {
+        itemId: '1232',
       }
-      const insertId = await this._nextOrderId();
-      const insertedValue = await this._eateries.insertOne({id : eateryId,_id:insertId});
-      if(insertedValue.insertedCount == 1){
+    };
+
+    try {
+      if (eateryId == 0) {
+        throw "ERROR"
+      }
+      const insertedValue = await this._orders.insertOne(insert);
+      if (insertedValue.insertedCount == 1) {
         return {
-          eateryId : eateryId,
-          order_id : insertId
+          eateryId: eateryId,
+          id: insertId
         };
       } else {
-        throw eateryId
+        throw "ERROR"
       }
     }
     catch (err) {
       const msg = `cannot create new order: ${err}`;
-      return { errors: [ new AppError(msg, { code: 'DB'}) ] };
+      return { errors: [new AppError(msg, { code: 'DB' })] };
     }
   }
 
   // Returns a unique, difficult to guess order-id.
   async _nextOrderId() {
-      //TODO
+    //TODO
     const nxtId = await this._genId.nextId();
-    this._id ++;
-    return nxtId ;
+    this._id++;
+    return nxtId;
   }
 
   /** Return object { id, eateryId, items? } containing details for
@@ -114,17 +128,18 @@ class ChowDao {
   async getOrder(orderId) {
     try {
       //TODO
-      const orderList = await this._eateries.findOne({_id : orderId})
-
-      if(Object.keys(orderList).length > 0)
+      const orderList = await this._orders.findOne({ id: orderId },{_id:0})
       
-        return {_id: orderId, eateryId: orderList.id, items: orderList.menu};
-      else
-        return "orderId "+orderId+" NOT_FOUND";
+      if (orderList != null) {
+        return orderList;
+      }
+      else {
+        throw "orderId " + orderId + " NOT_FOUND";
+      }
     }
     catch (err) {
       const msg = `cannot read order ${orderId}: ${err}`;
-      return { errors: [ new AppError(msg, { code: 'NOT_FOUND'}) ] };
+      return { errors: [new AppError(msg, { code: 'NOT_FOUND' })] };
     }
   }
 
@@ -134,16 +149,17 @@ class ChowDao {
   async removeOrder(orderId) {
     try {
       //TODO
-      const res = await this._eateries.deleteOne({_id: orderId});
-   
-      if(res.deletedCount == 1)
-        return {deletedCount : res.deletedCount};
-      else 
-        throw "orderId - "+orderId+" - NOT_FOUND";  
+
+      const res = await this._orders.deleteOne({ id: orderId });
+
+      if (res.deletedCount == 1)
+        return { deletedCount: res.deletedCount };
+      else
+        throw "orderId - " + orderId + " - NOT_FOUND";
     }
     catch (err) {
       const msg = `cannot read order ${orderId}: ${err}`;
-      return { errors: [ new AppError(msg, { code: 'NOT_FOUND'}) ] };
+      return { errors: [new AppError(msg, { code: 'NOT_FOUND' })] };
     }
   }
 
@@ -161,64 +177,49 @@ class ChowDao {
     try {
       //TODO
       const orderDetails = await this.getOrder(orderId);
-    
-      if(Object.keys(orderDetails).length > 0){
-       
-        
-        const categoryList = Object.keys(orderDetails.items);
-       
-        for (let i = 0; i < categoryList.length; i++) {
-          const itemList = orderDetails.items[categoryList[i]];
-          for( let j = 0; j < itemList.length; j++ ) {
-            
-            const obj = itemList[j];
-            if( obj.id == itemId ) {
-              let qnty = obj.quantity || 0;
-              obj.quantity = nChanges > 0 ? qnty + nChanges : qnty - nChanges;
-            
-              if(obj.quantity < 0){
-                throw "BAD_REQ"
-              }
-            } else {
-              if(nChanges < 0){
-                throw "BAD_REQ"
-              }
-              
-              obj.quantity = nChanges;
-             
+      console.log("orderDetails " + orderId);
+      console.log(JSON.stringify(orderDetails))
+      if (!orderDetails.hasOwnProperty('errors')) {
+        const itemList = Object.keys(orderDetails.items);
+
+        for (let i = 0; i < itemList.length; i++) {
+          const listItemId = orderDetails.items[itemList[i]];
+          console.log("listItemId  " + listItemId);
+          if (listItemId == itemId) {
+            let qnty = orderDetails.items.quantity || 0;
+            orderDetails.items.quantity = nChanges > 0 ? qnty + nChanges : qnty - nChanges;
+            console.log(orderDetails.items.quantity);
+          } else {
+            if (nChanges < 0) {
+              console.log("nChanges   " + nChanges);
+              throw "BAD_REQ"
             }
-
-            itemList[j] = obj;
+            orderDetails.items.quantity = nChanges;
           }
-
-          orderDetails.items[categoryList[i]] = itemList;
         }
-        
-       const update = {"$set" : {menu: orderDetails}}
-        const updatedRecord = await this._eateries.updateOne({id:orderId}, update);
+        console.log("check    " + orderDetails)
+        const update = { "$set": { items: orderDetails.items } }
+        const updatedRecord = await this._orders.updateOne({ _id: orderId }, update);
+        console.log("updated record   " + JSON.stringify(updatedRecord))
+        if (updatedRecord.modifiedCount !== 0) {
 
-        if(updatedRecord.modifiedCount == 1){
-          
-          const updatedRecordValue = await this.getOrder(orderId)//this._eateries.findOne({_id:orderId},{_id:0})
-          if(Object.keys(updatedRecordValue).length > 0){
+          const updatedRecordValue = await this.getOrder(orderId);
+          if (updatedRecord != null) {
             return updatedRecordValue;
-          }else {
-            throw "NOT-FOUND"
-          } 
+          } else {
+            throw "NOT_FOUND"
+          }
         } else {
-          throw "NOT-FOUND"
-        } 
-      }else {
-        throw "NOT-FOUND"
+          throw "NOT_FOUND"
+        }
+      } else {
+        console.log('not found records');
+        throw "NOT_FOUND"
       }
-      
-   
-
-      
     }
     catch (err) {
       const msg = `cannot read order ${orderId}: ${err}`;
-      return { errors: [ new AppError(msg, { code: 'DB'}) ] };
+      return { errors: [new AppError(msg, { code: err })] };
     }
   }
 
@@ -230,8 +231,8 @@ class ChowDao {
       const eatery = await
         this._eateries.findOne({ _id: eid.replaceAll('.', '_') });
       if (eatery === null) {
-	const msg = `cannot find eatery "${eid}"`;
-	return { errors: [ new AppError(msg, { code: 'NOT_FOUND'}) ] };
+        const msg = `cannot find eatery "${eid}"`;
+        return { errors: [new AppError(msg, { code: 'NOT_FOUND' })] };
       }
       const ret = { ...eatery };
       INTERNALS.forEach(i => delete ret[i]);
@@ -239,7 +240,7 @@ class ChowDao {
     }
     catch (err) {
       const msg = `cannot find eatery "${eid}": ${err}`;
-      return { errors: [ new AppError(msg, { code: 'DB'}) ] };
+      return { errors: [new AppError(msg, { code: 'DB' })] };
     }
   }
 
@@ -247,27 +248,28 @@ class ChowDao {
   async loadEateries(eateries) {
     try {
       await this._eateries.deleteMany({});
-      await this._eateries.createIndex({_cuisine: 'hashed'});
-      await this._eateries.createIndex({_location: '2dsphere'});
+      await this._eateries.createIndex({ _cuisine: 'hashed' });
+      await this._eateries.createIndex({ _location: '2dsphere' });
       for (const eatery of eateries) {
-	const insert = {
-	  ...eatery,
-	  _id: eatery.id.replaceAll('.', '_'),
-	  _cuisine: eatery.cuisine.toLowerCase(),
-	  _location: {
-	    type: 'Point',
-	    coordinates: [ eatery.loc.lng, eatery.loc.lat ],
-	  },
-	};
-	const ret = await this._eateries.insertOne(insert);
-	if (ret.insertedCount !== 1) {
-	  throw `inserted ${ret.insertedCount} eateries for ${eatery.id}`;
-	}
+        const insert = {
+          ...eatery,
+          _id: eatery.id.replaceAll('.', '_'),
+          _cuisine: eatery.cuisine.toLowerCase(),
+          _location: {
+            type: 'Point',
+            coordinates: [eatery.loc.lng, eatery.loc.lat],
+          },
+        };
+        const ret = await this._eateries.insertOne(insert);
+        //const ret1 = await this._orders.insertOne(insert);
+        if (ret.insertedCount !== 1) {
+          throw `inserted ${ret.insertedCount} eateries for ${eatery.id}`;
+        }
       }
     }
     catch (err) {
       const msg = `cannot load eateries: ${err}`;
-      return { errors: [ new AppError(msg, { code: 'DB'}) ] };
+      return { errors: [new AppError(msg, { code: 'DB' })] };
     }
   }
 
@@ -283,35 +285,34 @@ class ChowDao {
    *  loc { lat, lng }.  Return [] if there are no eateries for the 
    *  specified cuisine.
    */
-  async locateEateries(cuisine, loc=params.bingLoc, index=0,
-		       count=params.defaultCount)
-  {
+  async locateEateries(cuisine, loc = params.bingLoc, index = 0,
+    count = params.defaultCount) {
     try {
       const params = [{
-	$geoNear: {
-	  near: { type: 'Point', coordinates: [ loc.lng, loc.lat ] },
-	  spherical: true,
-	  query: { _cuisine: cuisine.toLowerCase(), },
-	  distanceField: 'dist',
-	  distanceMultiplier: 1/1600,
-	},
+        $geoNear: {
+          near: { type: 'Point', coordinates: [loc.lng, loc.lat] },
+          spherical: true,
+          query: { _cuisine: cuisine.toLowerCase(), },
+          distanceField: 'dist',
+          distanceMultiplier: 1 / 1600,
+        },
       }];
       const cursor = await
         this._eateries.aggregate(params).skip(index).limit(count);
       const arr = await cursor.toArray();
       return arr.map(a => ({
-	id: a.id,
-	name: a.name,
-	loc: a.loc,
-	dist: a.dist,
-	cusine: a.cuisine,
+        id: a.id,
+        name: a.name,
+        loc: a.loc,
+        dist: a.dist,
+        cusine: a.cuisine,
       }));
     }
     catch (err) {
       const msg = `
 	cannot locate "${cuisine} eateries at (${loc.lat}, ${loc.lng}): ${err}
       `.trim();
-      return { errors: [ new AppError(msg, { code: 'DB'}) ] };
+      return { errors: [new AppError(msg, { code: 'DB' })] };
     }
   }
 
@@ -336,6 +337,6 @@ class IdGen {
   }
 
   get base() { return this._base; }
-  
+
 }
 
