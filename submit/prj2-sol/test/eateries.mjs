@@ -129,6 +129,14 @@ describe('eateries DAO', function() {
     assert.equal(orderId, getRes._id);
   });
 
+  it ('must editOrder based on OrderNumber', async function () {
+    const orderId = "2_62";
+    const itemId = "2_44";
+    const nChanges = -4;
+    const getRes = await dao.editOrder(orderId, itemId, nChanges) 
+    assert.equal(getRes.errors[0].code, "BAD_REQ");
+  });
+
   it ('must return NOT-FOUND error if given OrderNumber not Present to removeOrder ', async function () {
     const id = "0_56";
     const getRes = await dao.removeOrder(id);
