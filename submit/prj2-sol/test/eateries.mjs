@@ -7,7 +7,7 @@ import chai from 'chai';
 const { assert } = chai;
 
 const COURSE_DIR = `${process.env.HOME}/cs544`;
-const DATA_PATH = "/Users/subrahmanya/Documents/GitHub/Web-Projects-CS544/submit/prj2-sol/chow-down1.json";
+const DATA_PATH = `${COURSE_DIR}/data/chow-down1.json`;
 const DATA = readJson(DATA_PATH);
 
 describe('eateries DAO', function() {
