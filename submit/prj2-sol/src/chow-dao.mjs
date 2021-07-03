@@ -51,19 +51,10 @@ class ChowDao {
     const params = {};
     try {
       params._client = await mongo.connect(dbUrl, MONGO_CONNECT_OPTIONS);
-      //const db = params._client.db();
-     // params._eateries = db.collection(EATERIES_COLLECTION);
-
-      params._client .connect(function(err) {
-        assert.equal(null, err);
-        console.log("Connected successfully to server");
-      
-        this.db =  params._client.db();
-      
-        params._client.close();
-      });
-      
-      //TODO
+      const db = params._client.db();
+      params._eateries = db.collection(EATERIES_COLLECTION);
+      params._id = 1;
+      params._genId = new IdGen(params._id);
     }
     catch (err) {
       const msg = `cannot connect to URL "${dbUrl}": ${err}`;
@@ -86,14 +77,19 @@ class ChowDao {
    */ 
   async newOrder(eateryId) {
     try {
-      //TODO
-      alert(eateryId);
-      const insertedValue = await this.db.insertOne({eateryId : eateryId});
-
-      return {
-        id : insertedValue.insertedId,
-        eateryId : eateryId 
-      };
+      if(eateryId == 0){
+        throw "eateryId should not be 0";
+      }
+      const insertId = await this._nextOrderId();
+      const insertedValue = await this._eateries.insertOne({eateryId : eateryId,id:insertId});
+      if(insertedValue.insertedCount == 1){
+        return {
+          eateryId : eateryId,
+          order_id : insertId
+        };
+      } else {
+        throw eateryId
+      }
     }
     catch (err) {
       const msg = `cannot create new order: ${err}`;
@@ -103,8 +99,10 @@ class ChowDao {
 
   // Returns a unique, difficult to guess order-id.
   async _nextOrderId() {
-    //TODO
-    return '';
+      //TODO
+    const nxtId = await this._genId.nextId();
+    this._id ++;
+    return nxtId ;
   }
 
   /** Return object { id, eateryId, items? } containing details for
@@ -116,11 +114,17 @@ class ChowDao {
   async getOrder(orderId) {
     try {
       //TODO
-      return {};
+      const orderList = await this._eateries.findOne({"_id" : orderId},{_id:0})
+
+      if(Object.keys(orderList).length > 0)
+      
+        return {_id: orderId, eateryId: orderList.id, items: orderList.menu};
+      else
+        return "orderId "+orderId+" NOT_FOUND";
     }
     catch (err) {
       const msg = `cannot read order ${orderId}: ${err}`;
-      return { errors: [ new AppError(msg, { code: 'DB'}) ] };
+      return { errors: [ new AppError(msg, { code: 'NOT_FOUND'}) ] };
     }
   }
 
@@ -130,11 +134,16 @@ class ChowDao {
   async removeOrder(orderId) {
     try {
       //TODO
-      return {};
+      const res = await this._eateries.deleteOne({"id": orderId});
+   
+      if(res.deletedCount == 1)
+        return {deletedCount : res.deletedCount};
+      else 
+        throw "orderId - "+orderId+" - NOT_FOUND";  
     }
     catch (err) {
       const msg = `cannot read order ${orderId}: ${err}`;
-      return { errors: [ new AppError(msg, { code: 'DB'}) ] };
+      return { errors: [ new AppError(msg, { code: 'NOT_FOUND'}) ] };
     }
   }
 
@@ -151,7 +160,45 @@ class ChowDao {
   async editOrder(orderId, itemId, nChanges) {
     try {
       //TODO
-      return {};
+      const orderDetails = await this.getOrder(orderId);
+      let itemDetails = {};
+      if(Object.keys(orderDetails).length > 0){
+        itemDetails = orderDetails.items;
+        return orderDetails
+        /* if(itemDetails.id == itemId){
+          const qnty = itemDetails.quantity || 0;
+          itemDetails.quantity = nChanges > 0 ? qnty + nChanges : qnty - nChanges;
+          if(itemDetails.quantity < 0){
+            throw "BAD_REQ"
+          }
+        } else {
+          if(nChanges < 0){
+            throw "BAD_REQ"
+          }
+          itemDetails.quantity = nChanges;
+        }
+        
+       const update = {"$set" : {items: itemDetails}}
+        const updatedRecord = this._eateries.updateOne({id:orderId}, update);
+
+        if(updatedRecord.acknowledged == true){
+          
+          const updatedRecordValue = this._eateries.findOne({id:orderId},{_id:0})
+          if(Object.keys(updatedRecordValue).length > 0){
+            return updatedRecordValue;
+          }else {
+            throw "NOT-FOUND"
+          } 
+        } else {
+          throw "NOT-FOUND"
+        } */
+      }else {
+        throw "NOT-FOUND"
+      }
+      
+   
+
+      
     }
     catch (err) {
       const msg = `cannot read order ${orderId}: ${err}`;
