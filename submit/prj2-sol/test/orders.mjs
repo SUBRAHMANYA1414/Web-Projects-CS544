@@ -21,8 +21,8 @@ describe('eateries DAO', function() {
     const id = "123";
     const insertRes = await dao.newOrder("123") 
     const getRes = await dao.getOrder(insertRes.id) 
-    console.log(insertRes.id +"  arjun "+getRes._id);
-    assert.equal(insertRes.id, getRes._id);
+    console.log(insertRes.id +"  arjun "+getRes.id);
+    assert.equal(insertRes.id, getRes.id);
   });
 
   it ('must return NOT-FOUND error if given OrderNumber not Present', async function () {
@@ -50,7 +50,7 @@ describe('eateries DAO', function() {
     const nChanges = 5;
     const insertRes = await dao.newOrder("123") 
     const getRes = await dao.editOrder(insertRes.id, itemId, nChanges) 
-    assert.equal(insertRes.id, getRes._id);
+    assert.equal(insertRes.id, getRes.id);
   });
 
   it ('must editOrder based on OrderNumber with - nChangeValues', async function () {
