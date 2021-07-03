@@ -81,7 +81,7 @@ class ChowDao {
         throw "eateryId should not be 0";
       }
       const insertId = await this._nextOrderId();
-      const insertedValue = await this._eateries.insertOne({eateryId : eateryId,id:insertId});
+      const insertedValue = await this._eateries.insertOne({id : eateryId,_id:insertId});
       if(insertedValue.insertedCount == 1){
         return {
           eateryId : eateryId,
@@ -114,7 +114,7 @@ class ChowDao {
   async getOrder(orderId) {
     try {
       //TODO
-      const orderList = await this._eateries.findOne({"_id" : orderId},{_id:0})
+      const orderList = await this._eateries.findOne({_id : orderId})
 
       if(Object.keys(orderList).length > 0)
       
@@ -134,7 +134,7 @@ class ChowDao {
   async removeOrder(orderId) {
     try {
       //TODO
-      const res = await this._eateries.deleteOne({"id": orderId});
+      const res = await this._eateries.deleteOne({_id: orderId});
    
       if(res.deletedCount == 1)
         return {deletedCount : res.deletedCount};
@@ -161,29 +161,45 @@ class ChowDao {
     try {
       //TODO
       const orderDetails = await this.getOrder(orderId);
-      let itemDetails = {};
+    
       if(Object.keys(orderDetails).length > 0){
-        itemDetails = orderDetails.items;
-        return orderDetails
-        /* if(itemDetails.id == itemId){
-          const qnty = itemDetails.quantity || 0;
-          itemDetails.quantity = nChanges > 0 ? qnty + nChanges : qnty - nChanges;
-          if(itemDetails.quantity < 0){
-            throw "BAD_REQ"
+       
+        
+        const categoryList = Object.keys(orderDetails.items);
+       
+        for (let i = 0; i < categoryList.length; i++) {
+          const itemList = orderDetails.items[categoryList[i]];
+          for( let j = 0; j < itemList.length; j++ ) {
+            
+            const obj = itemList[j];
+            if( obj.id == itemId ) {
+              let qnty = obj.quantity || 0;
+              obj.quantity = nChanges > 0 ? qnty + nChanges : qnty - nChanges;
+            
+              if(obj.quantity < 0){
+                throw "BAD_REQ"
+              }
+            } else {
+              if(nChanges < 0){
+                throw "BAD_REQ"
+              }
+              
+              obj.quantity = nChanges;
+             
+            }
+
+            itemList[j] = obj;
           }
-        } else {
-          if(nChanges < 0){
-            throw "BAD_REQ"
-          }
-          itemDetails.quantity = nChanges;
+
+          orderDetails.items[categoryList[i]] = itemList;
         }
         
-       const update = {"$set" : {items: itemDetails}}
-        const updatedRecord = this._eateries.updateOne({id:orderId}, update);
+       const update = {"$set" : {menu: orderDetails}}
+        const updatedRecord = await this._eateries.updateOne({id:orderId}, update);
 
-        if(updatedRecord.acknowledged == true){
+        if(updatedRecord.modifiedCount == 1){
           
-          const updatedRecordValue = this._eateries.findOne({id:orderId},{_id:0})
+          const updatedRecordValue = await this.getOrder(orderId)//this._eateries.findOne({_id:orderId},{_id:0})
           if(Object.keys(updatedRecordValue).length > 0){
             return updatedRecordValue;
           }else {
@@ -191,7 +207,7 @@ class ChowDao {
           } 
         } else {
           throw "NOT-FOUND"
-        } */
+        } 
       }else {
         throw "NOT-FOUND"
       }
