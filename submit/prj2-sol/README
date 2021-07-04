@@ -1,6 +1,20 @@
-Name:		XXX
-B-Number:	XXX
-Email:		XXX
 
-Add text here as needed.
+# i544
+proj2-sol
+
+Name:		Subrahmanya Udaya Shankar
+B-Number:	B00865067
+Email:		su1@binghamton.edu
+
+
+Added test case in src/test/orders.mjs file to satisfying all the scenarios to check for newOrder(), getOrder(), removeOrder() and editOrder() methods as well as the internal _nextOrderId() method.
+
+
+Branch : prj2-sol
+
+Navigate to the above branch(if it is is pointing to main in github) and we can see the required code changes and also the test cases added.
+
+Attaching test success screenshot as well.
+
+
 
