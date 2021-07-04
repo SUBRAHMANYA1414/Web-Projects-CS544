@@ -217,7 +217,7 @@ class ChowDao {
         throw "NOT_FOUND"
       }
     }
-    catch (err) {
+    catch (err) {   
       const msg = `cannot read order ${orderId}: ${err}`;
       return { errors: [new AppError(msg, { code: err })] };
     }
