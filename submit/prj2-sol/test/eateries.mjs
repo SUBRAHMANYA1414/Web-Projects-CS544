@@ -7,6 +7,7 @@ import chai from 'chai';
 const { assert } = chai;
 
 const COURSE_DIR = `${process.env.HOME}/cs544`;
+//const DATA_PATH = "/Users/subrahmanya/Documents/GitHub/Web-Projects-CS544/submit/prj2-sol/chow-down1.json";
 const DATA_PATH = `${COURSE_DIR}/data/chow-down1.json`;
 const DATA = readJson(DATA_PATH);
 
@@ -84,23 +85,32 @@ describe('eateries DAO', function() {
     assert.equal(eatery.errors[0].code, 'NOT_FOUND');
   });
 
+/*
   it ('must insert new Order', async function () {
-    const id = 1;
-    const insertRes = await dao.newOrder(id) 
-    assert.equal(id, insertRes.eateryId);
+
+  const insertOrder = 
+      {
+        "eateryId": "123",
+        "items": {
+          "itemId": 2,
+        }
+      }
+    const insertRes = await dao.newOrder("123") 
+    assert.equal(insertOrder.eateryId, insertRes.eateryId);
   });
 
   it ('can not create new Order', async function () {
-    const id = 0;
-    const insertRes = await dao.newOrder(id);
+    const insertOrder = 0;
+    const insertRes = await dao.newOrder(insertOrder);
     assert.equal(insertRes.errors[0].code, "DB");
   });
 
   it ('must get Orderinformation based on OrderNumber', async function () {
-    const id = "2_62";
-    const getRes = await dao.getOrder(id) 
-   // assert(getRes)
-    assert.equal(id, getRes._id);
+    const id = "123";
+    const insertRes = await dao.newOrder("123") 
+    const getRes = await dao.getOrder(insertRes.id) 
+    console.log(insertRes.id +"  arjun "+getRes._id);
+    assert.equal(insertRes.id, getRes._id);
   });
 
   it ('must return NOT-FOUND error if given OrderNumber not Present', async function () {
@@ -108,10 +118,12 @@ describe('eateries DAO', function() {
     const getRes = await dao.getOrder(id);
     assert.equal(getRes.errors[0].code, "NOT_FOUND");
   });
+  
 
   it ('must removeOrder based on OrderNumber', async function () {
-    const id = "1_67";
-    const getRes = await dao.removeOrder(id) 
+    
+    const insertRes = await dao.newOrder("123") 
+    const getRes = await dao.removeOrder(insertRes.id) 
     assert.equal(1, getRes.deletedCount);
   });
 
@@ -122,30 +134,30 @@ describe('eateries DAO', function() {
   });
 
   it ('must editOrder based on OrderNumber', async function () {
-    const orderId = "2_62";
-    const itemId = "2_44";
+    const itemId = "1232";
     const nChanges = 5;
-    const getRes = await dao.editOrder(orderId, itemId, nChanges) 
-    assert.equal(orderId, getRes._id);
+    const insertRes = await dao.newOrder("123") 
+    const getRes = await dao.editOrder(insertRes.id, itemId, nChanges) 
+    assert.equal(insertRes.id, getRes._id);
   });
 
-  it ('must editOrder based on OrderNumber', async function () {
-    const orderId = "2_62";
-    const itemId = "2_44";
-    const nChanges = -4;
-    const getRes = await dao.editOrder(orderId, itemId, nChanges) 
-    assert.equal(getRes.errors[0].code, "BAD_REQ");
+  it ('must editOrder based on OrderNumber with - nChangeValues', async function () {
+   
+    const itemId = "12321";
+    const nChanges = -5;
+     const insertRes = await dao.newOrder("123")
+    const getRes = await dao.editOrder(insertRes.id, itemId, nChanges) 
+    assert.equal( "BAD_REQ",getRes.errors[0].code);
   });
 
-  it ('must return NOT-FOUND error if given OrderNumber not Present to removeOrder ', async function () {
-    const id = "0_56";
-    const getRes = await dao.removeOrder(id);
-    assert.equal(getRes.errors[0].code, "NOT_FOUND");
-  }); 
-
-
-
-
+  it ('must editOrder based on OrderNumber with - nChangeValues', async function () {
+    const itemId = "12321";
+    const nChanges = 5;
+     const insertRes = await dao.newOrder("123")
+    const getRes = await dao.editOrder("121", itemId, nChanges) 
+    assert.equal( "NOT_FOUND",getRes.errors[0].code);
+  });
+*/
 });	
 
 function readJson(path) {

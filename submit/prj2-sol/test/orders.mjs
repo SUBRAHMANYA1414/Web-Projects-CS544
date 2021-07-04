@@ -53,7 +53,7 @@ describe('eateries DAO', function() {
     assert.equal(insertRes.id, getRes.id);
   });
 
-  it ('must editOrder based on OrderNumber with - nChangeValues', async function () {
+  it ('must editOrder based on OrderNumber with - nChangeValues BAD_REQ', async function () {
    
     const itemId = "12321";
     const nChanges = -5;
