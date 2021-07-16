@@ -156,12 +156,15 @@ function newOrder(app) {
     try{
      
       const eateryId = req.query.eateryId;
-      const isValidId= eateryId.replace("_",".");
-      if(isNaN(isValidId)) throw {"errors":[{"message":"NOT_FOUND","options":{code:"NOT_FOUND"}}]};
-      const result = await app.locals.dao.newOrder(eateryId);
-     
+      const order = await app.locals.dao.newOrder(eateryId);
+      if(order.errors) throw order;
+      const eatery = await app.locals.dao.getEatery(eateryId);
+      if(eatery.errors) throw eatery;
+     // console.log("new order   result   "+JSON.stringify(result));
+      const result =   eateryOrder(eatery,order);
+
       if(result.errors) throw result;
-      const eateryObj = result.eateryId;
+     
       const ret = { links: [ selfLink(req), orderLink(req,result.id), eateryLink(req,eateryId) ], ...result};
       res.append('Location', orderUrl(req,result.id));
       res.status(ORDER_CREATED).json(ret);
@@ -248,20 +251,28 @@ function updateOrder(app) {
       const itemId = req.query.itemId;
       const nItems = req.query.nItems;
 
-      const isValidOrderId= orderId.replace("_",".");
-      const isValidItemId= itemId.replace("_",".");
-      
-      if(isNaN(isValidOrderId) || isNaN(isValidItemId) ) throw {"errors":[{"message":"NOT_FOUND","options":{code:"NOT_FOUND"}}]};
       if(nItems < 0) throw {"errors":[{"message":"BAD_REQUEST","options":{code:"BAD_REQUEST"}}]};
-      
-     const result = await app.locals.dao.editOrder(orderId, itemId, nItems );
-console.log("updateOrder   result  "+JSON.stringify(result));
+     
+     const getOrderDetails = await app.locals.dao.getOrder(orderId);
+     if(getOrderDetails.errors) throw getOrderDetails
+
+     const order = await app.locals.dao.editOrder(orderId, itemId, nItems );
+     if(order.errors) throw order;
+     const eatery = await app.locals.dao.getEatery(order.eateryId);
+     if(eatery.errors) throw eatery;
+     const result =   eateryOrder(eatery,order);
+
+      if(result.errors) throw result;
+     
+      console.log("updateOrder   result  "+JSON.stringify(result));
       if(result.error) throw result;
 
       const self = selfLink(req);
       self.href = orderUrl(req,orderId)
 
-      result.items = [result.items]
+     result.items.map(item =>{
+      return item.quantity = parseInt(item.quantity)
+     });
 
       const ret = { links: [ self, eateryLink(req,result.eateryId) ], ...result };
       console.log("updateOrder   ret  "+JSON.stringify(ret));
@@ -313,6 +324,7 @@ function getEatery(app) {
     try {
       const eateryId = req.params.eateryId;
       const result = await app.locals.dao.getEatery(eateryId);
+      console.log("getEatery   "+JSON.stringify(result))
       if (result.errors) throw result;
       const ret = { links: [ selfLink(req) ], ...result };
       res.json(ret);
