@@ -20,6 +20,8 @@ import eateryOrder from './eatery-order.mjs';
 
 /*************************** Exported Class ****************************/
 
+const ORDER_CREATED = "201";
+
 export default class WsServer {
   constructor(dao, config={}) {
     const app = this.app = express();
@@ -77,6 +79,12 @@ function setupRoutes(app) {
   app.get(`${base}/eateries/:eateryId`, getEatery(app));
 
   //TODO: add routes for orders
+
+  //app.post(`${base}/orders?eateryId/:EATERY_ID`, newOrder(app));
+    app.post(base,newOrder(app));
+  app.get(`${base}/orders/:orderId`, getOrder(app));
+  app.delete(`${base}/orders/:orderId`, removeOrder(app));
+  app.patch(`${base}/orders/orderId?/:itemId,:nItems`, updateOrder(app));
   
   //must be last
   app.use(do404(app));
@@ -142,6 +150,21 @@ function handler(app) {
  */
 function newOrder(app) {
   //TODO
+  return (async function (req,res){
+    try{
+      const eateryId = req.params.eateryId;
+      const result = await app.locals.model.newOrder(eateryId);
+      if(result.errors) throw result;
+      const ret = { links: [ selfLink(req), orderLink(req,result.id), eateryLink(req,eateryId) ], ...result };
+      res.append('Location', orderUrl(req,result.id));
+      res.status(ORDER_CREATED).json(ret);
+    }
+    catch(err) {
+        //console.log(err); //uncomment during devel, especially for running tests
+      const mapped = mapResultErrors(err);
+      res.status(mapped.status).json(mapped);
+    }
+  });
 }
 
 /** Return handler for GET /orders/ORDER_ID: Return eatery-order with
@@ -153,6 +176,20 @@ function newOrder(app) {
  */
 function getOrder(app) {
   //TODO
+  return (async function(req, res) {
+    try {
+      const orderId = req.params.orderId;
+      const result = await app.locals.model.getOrder({ orderId: orderId });
+      if (result.errors) throw result;
+      const ret = { links: [ selfLink(req), eateryLink(req,result.eateryId) ], ...result };
+      
+      res.json(ret);
+    }
+    catch(err) {
+      const mapped = mapResultErrors(err);
+      res.status(mapped.status).json(mapped);
+    }
+  });
 }
 
 /** Return handler for DELETE /orders/ORDER_ID: Remove order with id
@@ -164,6 +201,18 @@ function getOrder(app) {
  */
 function removeOrder(app) {
   //TODO
+  return (async function(req, res) {
+    try {
+      const orderId = req.params.orderId;
+      const result = await app.locals.model.removeOrder({ orderId: orderId });
+      if (result.errors) throw result;
+      res.json({});
+    }
+    catch(err) {
+      const mapped = mapResultErrors(err);
+      res.status(mapped.status).json(mapped);
+    }
+  });
 }
 
 /** Return handler for PATCH /orders/ORDER_ID?itemId=ITEM_ID&nItems=N_ITEMS: 
@@ -180,6 +229,58 @@ function removeOrder(app) {
  */
 function updateOrder(app) {
   //TODO
+  return (async function(req, res) {
+    try {
+      const {orderId,itemId, nItems} = req.params;
+
+      const result = await app.locals.model.editOrder({ orderId: orderId, itemId: itemId, nChanges: nItems });
+
+      if(result.error) throw result;
+
+      const self = selfLink(req);
+      self.href = orderUrl(req,orderId)
+
+      const ret = { links: [ self, eateryLink(req,eateryId) ], ...result };
+      
+      res.json(ret);
+
+
+/*
+
+      const loc = location({itemId, nItems});
+      const query = locateQuery(req.query);
+      if (loc.errors || query.errors) {
+        throw { errors: (loc.errors ?? []).concat(query.errors ?? []) };
+            }
+            const { cuisine, offset, count } = query;
+            const count1 = count + 1;
+            const results =
+        await app.locals.dao.locateEateries(cuisine, loc, offset, count1);
+            if (results.errors) throw results;
+            const links =  [ selfLink(req), ];
+            if (results.length > count) {
+        const qNext = Object.assign({}, query, { offset: offset + count });
+        const next = `${selfUrl(req, false)}?` + querystring.stringify(qNext);
+        links.push({ rel: 'next', name: 'next', href: next });
+            }
+            if (offset !== 0 && results.length > 0) {
+        const prevOffset = offset > count ? offset - count : 0;
+        const qPrev = Object.assign({}, query, { offset: prevOffset });
+        const prev = `${selfUrl(req, false)}?` + querystring.stringify(qPrev);
+        links.push({ rel: 'prev', name: 'prev', href: prev });
+            }
+            const eateries = results.slice(0, count).map(function (e) {
+        const self = { rel: 'self', name: 'self', href: eateryUrl(req, e.id) };
+        return { links: [ self ], ...e };
+            });
+            res.json({ eateries, links }); */
+          }
+          catch(err) {
+            //console.log(err); //uncomment during devel, especially for running tests
+            const mapped = mapResultErrors(err);
+            res.status(mapped.status).json(mapped);
+          }
+  });
 }
 
 /************************** Eatery Handlers ****************************/
