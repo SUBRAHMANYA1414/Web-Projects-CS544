@@ -80,11 +80,12 @@ function setupRoutes(app) {
 
   //TODO: add routes for orders
 
-  //app.post(`${base}/orders?eateryId/:EATERY_ID`, newOrder(app));
-    app.post(base,newOrder(app));
+  app.post(`${base}/orders`, newOrder(app));
+  //  app.post(base,newOrder(app));
   app.get(`${base}/orders/:orderId`, getOrder(app));
   app.delete(`${base}/orders/:orderId`, removeOrder(app));
-  app.patch(`${base}/orders/orderId?/:itemId,:nItems`, updateOrder(app));
+  //app.patch(`${base}/orders/orderId?/:itemId,:nItems`, updateOrder(app));
+  app.patch(`${base}/orders/:orderId`, updateOrder(app));
   
   //must be last
   app.use(do404(app));
@@ -149,18 +150,23 @@ function handler(app) {
  *     for eateryId. *   
  */
 function newOrder(app) {
+  console.log("  newOrder    app  "+app);
   //TODO
   return (async function (req,res){
     try{
-      const eateryId = req.params.eateryId;
-      const result = await app.locals.model.newOrder(eateryId);
+     
+      const eateryId = req.query.eateryId;
+      const isValidId= eateryId.replace("_",".");
+      if(isNaN(isValidId)) throw {"errors":[{"message":"NOT_FOUND","options":{code:"NOT_FOUND"}}]};
+      const result = await app.locals.dao.newOrder(eateryId);
+     
       if(result.errors) throw result;
-      const ret = { links: [ selfLink(req), orderLink(req,result.id), eateryLink(req,eateryId) ], ...result };
+      const eateryObj = result.eateryId;
+      const ret = { links: [ selfLink(req), orderLink(req,result.id), eateryLink(req,eateryId) ], ...result};
       res.append('Location', orderUrl(req,result.id));
       res.status(ORDER_CREATED).json(ret);
     }
     catch(err) {
-        //console.log(err); //uncomment during devel, especially for running tests
       const mapped = mapResultErrors(err);
       res.status(mapped.status).json(mapped);
     }
@@ -175,18 +181,23 @@ function newOrder(app) {
  *  Errors: NOT_FOUND if bad ORDER_ID or no eatery for order's eatery-id.
  */
 function getOrder(app) {
+  console.log("getOrder   app   "+app)
   //TODO
   return (async function(req, res) {
     try {
       const orderId = req.params.orderId;
-      const result = await app.locals.model.getOrder({ orderId: orderId });
+     
+      const result = await app.locals.dao.getOrder(orderId);
+      console.log("getOrder   result   "+JSON.stringify(result))
       if (result.errors) throw result;
       const ret = { links: [ selfLink(req), eateryLink(req,result.eateryId) ], ...result };
       
       res.json(ret);
     }
     catch(err) {
+      console.log("getOrder   "+err)
       const mapped = mapResultErrors(err);
+      console.log("getOrder  err "+JSON.stringify(mapped))
       res.status(mapped.status).json(mapped);
     }
   });
@@ -204,11 +215,13 @@ function removeOrder(app) {
   return (async function(req, res) {
     try {
       const orderId = req.params.orderId;
-      const result = await app.locals.model.removeOrder({ orderId: orderId });
+      const result = await app.locals.dao.removeOrder(orderId);
+      console.log("removeOrder   result   "+JSON.stringify(result))
       if (result.errors) throw result;
       res.json({});
     }
     catch(err) {
+      console.log(err);
       const mapped = mapResultErrors(err);
       res.status(mapped.status).json(mapped);
     }
@@ -231,17 +244,27 @@ function updateOrder(app) {
   //TODO
   return (async function(req, res) {
     try {
-      const {orderId,itemId, nItems} = req.params;
+      const orderId = req.params.orderId;
+      const itemId = req.query.itemId;
+      const nItems = req.query.nItems;
 
-      const result = await app.locals.model.editOrder({ orderId: orderId, itemId: itemId, nChanges: nItems });
-
+      const isValidOrderId= orderId.replace("_",".");
+      const isValidItemId= itemId.replace("_",".");
+      
+      if(isNaN(isValidOrderId) || isNaN(isValidItemId) ) throw {"errors":[{"message":"NOT_FOUND","options":{code:"NOT_FOUND"}}]};
+      if(nItems < 0) throw {"errors":[{"message":"BAD_REQUEST","options":{code:"BAD_REQUEST"}}]};
+      
+     const result = await app.locals.dao.editOrder(orderId, itemId, nItems );
+console.log("updateOrder   result  "+JSON.stringify(result));
       if(result.error) throw result;
 
       const self = selfLink(req);
       self.href = orderUrl(req,orderId)
 
-      const ret = { links: [ self, eateryLink(req,eateryId) ], ...result };
-      
+      result.items = [result.items]
+
+      const ret = { links: [ self, eateryLink(req,result.eateryId) ], ...result };
+      console.log("updateOrder   ret  "+JSON.stringify(ret));
       res.json(ret);
 
 
@@ -454,6 +477,7 @@ function mapResultErrors(err) {
   const errs = err.errors ?? [ new AppError(err.message ?? err.toString()) ];
   const errors =
     errs.map(err => ({message: err.message, options: err.options}));
+    console.log("errors   "+JSON.stringify(errors));
   const status = getHttpStatus(errors);
   if (status === Status.INTERNAL_SERVER_ERROR) console.error(errors);
   return { status, errors, };
