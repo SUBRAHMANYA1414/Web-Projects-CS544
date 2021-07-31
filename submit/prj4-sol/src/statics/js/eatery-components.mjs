@@ -60,9 +60,16 @@ class EateryResults extends HTMLElement {
 
   async attributeChangedCallback(name, oldValue, newValue) {
     //TODO
+    super();
+    this.addEventListener('login', this.login);
+    this.attachShadow({mode: 'open'});
+    this.tick = this.tick.bind(this);
   }
 
   //TODO auxiliary methods
+  connectedCallback() {
+    this.shadowRoot.innerHTML = 'app';
+  }
 }
 
 //register custom-element as eatery-results
@@ -119,10 +126,22 @@ class EateryDetails extends HTMLElement {
   
   async attributeChangedCallback(name, oldValue, newValue) {
     //TODO
+    async function go() {
+      const wsUrl = getWsUrl();
+    
+      const eateryResults = document.querySelector('eatery-results');
+      eateryResults.setAttribute('ws-url', wsUrl);
+      document.querySelector('eatery-details').buyFn = buy;
+      
   }
 
   //TODO auxiliary methods
-  
+  const select = document.querySelector('#cuisine');
+  select.addEventListener('change', ev => {
+    const cuisine = ev.target.value;
+    if (cuisine) eateryResults.setAttribute('cuisine', cuisine);
+  });
+}
 }
 
 //register custom-element as eatery-details
@@ -136,3 +155,6 @@ function getHref(links, rel) {
 }
 
 //TODO auxiliary functions
+function buy(eateryId, itemId) {
+  alert(`added 1 unit of ${itemId} from eatery ${eateryId} to order`);
+}
