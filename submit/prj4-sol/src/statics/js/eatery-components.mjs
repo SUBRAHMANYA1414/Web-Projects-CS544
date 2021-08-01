@@ -56,9 +56,9 @@ import { newElement, geoLoc } from './util.mjs';
 class EateryResults extends HTMLElement {
 
 
-    static get observedAttributes() { return [ 'ws-url', 'cuisine', ]; }
+  static get observedAttributes() { return ['ws-url', 'cuisine',]; }
 
-    async attributeChangedCallback(name, oldValue, newValue) {
+  async attributeChangedCallback(name, oldValue, newValue) {
     try {
 
 
@@ -79,13 +79,13 @@ class EateryResults extends HTMLElement {
         }
       }
       let response = await fetchData(mUrl);
-      alert(mUrl+"     "+JSON.stringify(response));
-      const  resLinks  = response.links;
+      //alert(mUrl+"     "+JSON.stringify(response));
+      const resLinks = response.links;
 
       const newUl = newElement('ul', { class: 'eatery-results' },);
 
       response.eateries.forEach(element => {
-        alert("element  "+JSON.stringify(element));
+        //  alert("element  "+JSON.stringify(element));
         this.innerHTML = ""
         const spanName = newElement('span', { class: 'eatery-name' }, element.name);
         const spanDist = newElement('span', {}, element.dist + " " + "miles");
@@ -142,7 +142,7 @@ class EateryResults extends HTMLElement {
     }
   }
 
-    //TODO auxiliary methods
+  //TODO auxiliary methods
 }
 
 //register custom-element as eatery-results
@@ -197,89 +197,68 @@ customElements.define('eatery-results', EateryResults);
 
 class EateryDetails extends HTMLElement {
 
-    static get observedAttributes() { return [ 'eatery-url', ]; }
+  static get observedAttributes() { return ['eatery-url',]; }
 
-    async attributeChangedCallback(name, oldValue, newValue) {
-        try {
+  async attributeChangedCallback(name, oldValue, newValue) {
+    try {
 
-            const wsData=await fetchData(this.getAttribute('eatery-url'))
-            let hdr5,hdr6,hdr7,button,ulattribute1,categoryDetails
-            const name = `${wsData.name} Menu`;
-            const hdr = newElement('h2', { class: 'eatery-name' }, name);
-            const ulattribute=newElement('ul', { class: 'eatery-categories' });
-            for (var i = 0; i < wsData.menuCategories.length; i++) {
-                const category1 = wsData.menuCategories[i]
-                this.innerHTML="";
+      const response = await fetchData(this.getAttribute('eatery-url'));
+      const menuCategories = response?.menuCategories;
+      const name = `${response.name} Menu`;
+      const eateryHeader = newElement('h2', { class: 'eatery-name' }, name);
+      const ulattribute = newElement('ul', { class: 'eatery-categories' });
+      menuCategories.forEach(category => {
+        this.innerHTML = "";
+        const newBtn = newElement('button', { class: 'menu-category' }, category);
+        newBtn.addEventListener('click', event => {
+          event.preventDefault();
+          const div = document.querySelector('#category-details');
+          div.innerHTML = "";
+          const newHeader = newElement('h2', {}, category);
+          const newUl = newElement('ul', { class: 'category-items' },);
+          const menu = response.menu[category];
+          menu.forEach(item => {
+            const mItem = response.flatMenu[item];
+            const newLi = newElement('li', {},);
+            const spanName = newElement('span', { class: 'item-name' }, mItem.name);
+            const spanPrice = newElement('span', { class: 'item-price' }, mItem.price);
+            const spanDetails = newElement('span', { class: 'item-details' }, mItem.details);
+            const btnBuy = newElement('button', { class: 'item-buy' }, 'Buy');
+            btnBuy.addEventListener('click', event => {
+              this.buyFn(response.id, mItem.id);
+              event.preventDefault();
+            });
 
-                button = newElement('button', {class: 'menu-category'}, category1);
-                button.addEventListener('click', ev => {
-                    ev.preventDefault();
-                    const div = document.querySelector('#category-details');
-                    div.innerHTML = ""
-                    // categoryDetails=newElement('div', { id: 'category-details' },);
-                    hdr6=newElement('h2',{} ,category1 );
-                    // if(document.getElementById('category-items')!==null ) {
-                    //     document.getElementById('category-items').innerHTML = ""
-                    // }
-                    ulattribute1=newElement('ul',{class:'category-items'},)
+            newLi.append(spanName);
+            newLi.append(spanPrice);
+            newLi.append(spanDetails);
+            newLi.append(btnBuy);
+            newUl.append(newLi);
 
-                    for(i of wsData.menu[category1]) {
+          });
+          div.append(newHeader);
+          div.append(newUl);
+          div.scrollIntoView();
 
-                        hdr5=newElement('li', {},);
-                        const spanattribute=newElement('span', {class: 'item-name'},wsData.flatMenu[i].name);
-                        const spanattribute1=newElement('span', {class: 'item-price'},wsData.flatMenu[i].price);
-                        const spanattribute2=newElement('span', {class: 'item-details'},wsData.flatMenu[i].details);
+        });
 
-                        const buttonItemBuy = newElement('button', { class: 'item-buy' },'Buy');
-                        buttonItemBuy.addEventListener('click', ev => {
-                            this.buyFn(wsData.id,wsData.flatMenu[i].id)
-                            ev.preventDefault();
-                        });
+        ulattribute.append(newBtn);
 
-                        hdr5.append(spanattribute)
-                        hdr5.append(spanattribute1)
-                        hdr5.append(spanattribute2)
-                        hdr5.append(buttonItemBuy)
-                        ulattribute1.append(hdr5)
+      });
 
-                    }
-
-
-                    div.append(hdr6)
-                    div.append(ulattribute1)
-                    div.scrollIntoView();
-
-
-                    // if(document.getElementById('category-details')!==null) {
-                    //     document.getElementById('category-details').innerHTML=""
-                    // }
-                   // this.append(categoryDetails);
-
-
-                });
-
-                ulattribute.append(button)
-
-            }
-
-            this.append(hdr)
-            this.append(ulattribute);
-            categoryDetails=newElement('div', { id: 'category-details' },);
-
-            this.append(categoryDetails);
-
-
-
-
-        }
-        catch (err) {
-            return new AppErrors().add(err);
-        }
-        //TODO
+      this.append(eateryHeader);
+      this.append(ulattribute);
+      const categoryDetails = newElement('div', { id: 'category-details' },);
+      this.append(categoryDetails);
     }
+    catch (err) {
+      return new AppErrors().add(err);
+    }
+    //TODO
+  }
 
 
-    //TODO auxiliary methods
+  //TODO auxiliary methods
 
 }
 
@@ -288,18 +267,18 @@ customElements.define('eatery-details', EateryDetails);
 
 async function fetchData(url = '', data = {}) {
 
-    const response = await fetch(url, {
-        method: 'GET',
-        mode: 'cors',
-        cache: 'no-cache',
-        credentials: 'same-origin',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        redirect: 'follow',
-        referrerPolicy: 'no-referrer',
-    });
-    return response.json();
+  const response = await fetch(url, {
+    method: 'GET',
+    mode: 'cors',
+    cache: 'no-cache',
+    credentials: 'same-origin',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    redirect: 'follow',
+    referrerPolicy: 'no-referrer',
+  });
+  return response.json();
 }
 
 
@@ -308,7 +287,7 @@ async function fetchData(url = '', data = {}) {
  *  link in links having the specified value.
  */
 function getHref(links, rel) {
-    return links.find(link => link.rel === rel)?.href;
+  return links.find(link => link.rel === rel)?.href;
 }
 
 //TODO auxiliary functions
