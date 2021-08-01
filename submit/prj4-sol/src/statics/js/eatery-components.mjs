@@ -70,6 +70,7 @@ class EateryResults extends HTMLElement {
       const eatery = await get(eateryUrl);
 
       const  mUrl = oldValue ? ((name === "name") ?   oldValue:   `${url}?cuisine=${newValue}` ) :   `${url}?cuisine=${newValue}`;
+      
       const response = await fetchData(mUrl);
       //alert(mUrl+"     "+JSON.stringify(response));
       const resLinks = response.links;
@@ -89,7 +90,7 @@ class EateryResults extends HTMLElement {
 // getHref(response.links, 'prev') !== undefined
       
     catch (err) {
-      return new AppErrors().add(err);
+      return err;
     }
   }
 
@@ -98,7 +99,11 @@ class EateryResults extends HTMLElement {
 
 //register custom-element as eatery-results
 customElements.define('eatery-results', EateryResults);
-
+function sendUrlChangeEvent(urlType, url) {
+  const detail = { urlType, url };
+  const urlEvent = new CustomEvent('urlChange', { detail });
+  document.dispatchEvent(urlEvent);
+}
 
 
 /*
@@ -160,11 +165,32 @@ class EateryDetails extends HTMLElement {
         newBtn.addEventListener('click', event => {
           event.preventDefault();
           // document.getElementById("category-details");
-
+          
+          for (const category of eatery.menuCategories) {
+            const categoryLink =
+              newElement('button', { class: 'menu-category'}, category);
+            categoryList.append(newElement('li', {}, categoryLink));
+            categoryLink.addEventListener('click', ev => {
+              this._categoryDetails(category);
+              ev.preventDefault();
+            });
+                }
           });
           
         ulattribute.append(newBtn);
-
+        for (const item of items) {
+          const { id, name, details, price } = item;
+          if (!name || !price) continue;
+          const li = newElement('li');
+          itemsList.append(li);
+          li.append(newElement('span', { class: 'item-name' }, name));
+          const fmtPrice = `$ ${price.toFixed(2)}`;
+          li.append(newElement('span', { class: 'item-price' }, fmtPrice));
+          li.append(newElement('span', { class: 'item-details' }, details));
+          const buy = newElement('button', { class: 'item-buy', }, 'Buy');
+          li.append(buy);
+          buy.addEventListener('click', () => sendBuyEvent(eatery.id, id));
+        }
       });
 
       this.append(eateryHeader);
@@ -173,7 +199,7 @@ class EateryDetails extends HTMLElement {
       this.append(categoryDetails);
     }
     catch (err) {
-      return new AppErrors().add(err);
+      return err.getAttribute;
     }
     //TODO
   }
