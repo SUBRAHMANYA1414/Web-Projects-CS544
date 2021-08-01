@@ -59,97 +59,86 @@ class EateryResults extends HTMLElement {
     static get observedAttributes() { return [ 'ws-url', 'cuisine', ]; }
 
     async attributeChangedCallback(name, oldValue, newValue) {
-        try {
+    try {
 
 
-            let AcualUrl;
-            const location = await geoLoc()
-            const baseurl = this.getAttribute('ws-url')
-            const url = new URL(baseurl);
-            url.pathname = 'eateries' + '/' + location.lat
-                + "," + location.lng
-            if(!oldValue) {
-                AcualUrl = url + "?cuisine" + "=" + newValue
-            }else {
-                if (name === "a") {
-                    AcualUrl = oldValue
-                }
-                else{
-                    AcualUrl = url + "?cuisine" + "=" + newValue
-                }
-            }
-            let wsData=await fetchData(AcualUrl)
-            // let a=wsDataFn(wsData,baseurl)
-            let hdr,hdr2
-            hdr=newElement('ul', {class: 'eatery-results'},);
-
-            for (let i of wsData.eateries) {
-                const spanattribute=newElement('span', {class: 'eatery-name'}, i.name);
-                const spanattribute1=newElement('span', {}, i.dist + " " + "miles");
-                const buttonSelect = newElement('button', {}, 'Select');
-                buttonSelect.addEventListener('click', async ev => {
-                    ev.currentTarget
-                    ev.preventDefault()
-                    await this.attributeChangedCallback('a', ev.currentTarget.parentNode.href, 'b')
-
-                    document.querySelector('eatery-details').setAttribute('eatery-url', `${baseurl}/eateries/${i.id}`)
-
-                    // this.);
-                });
-                const aattribute=newElement('a', {class:'select-eatery', href: getHref(wsData.links, 'self')},buttonSelect );
-
-                hdr2=newElement('li', {},);
-                hdr2.append(spanattribute)
-                hdr2.append(spanattribute1)
-                hdr2.append(aattribute)
-                hdr.append(hdr2)
-
-            }
-            const hdr6=newElement('div', {class: 'scroll'})
-
-            if(getHref(wsData.links,'prev')!==undefined)
-            {
-                const buttonLt = newElement('button', {}, '<');
-                buttonLt.addEventListener('click', async ev => {
-                    // ev.currentTarget.parentNode.href
-                    ev.preventDefault()
-
-                    await this.attributeChangedCallback('a', ev.currentTarget.parentNode.href, 'b')
-
-
-                });
-
-                const hdr4 = newElement('a', {rel: 'prev', href: getHref(wsData.links, 'prev')}, buttonLt)
-                hdr6.append(hdr4)
-
-            }
-            if(getHref(wsData.links,'next')!==undefined) {
-                const buttonGt = newElement('button', {}, `>`);
-                buttonGt.addEventListener('click', async ev => {
-                    ev.preventDefault()
-                    await this.attributeChangedCallback('a', ev.currentTarget.parentNode.href,newValue )
-                });
-
-                const hdr5 = newElement('a', {rel: 'next', href: getHref(wsData.links, 'next')}, buttonGt)
-
-                hdr6.append(hdr5)
-            }
-
-
-
-            this.innerHTML=""
-            this.append(hdr)
-
-            this.append(hdr6)
-
-
-
-
+      let mUrl;
+      const currLocation = await geoLoc();
+      const baseurl = this.getAttribute('ws-url')
+      const url = new URL(baseurl);
+      url.pathname = 'eateries' + '/' + currLocation.lat
+        + "," + currLocation.lng;
+      if (!oldValue) {
+        mUrl = `${url}?cuisine=${newValue}`;
+      } else {
+        if (name === "a") {
+          mUrl = oldValue
         }
-        catch (err) {
-            return new AppErrors().add(err);
+        else {
+          mUrl = `${url}?cuisine=${newValue}`;
         }
+      }
+      let response = await fetchData(mUrl);
+      const { resLinks } = response;
+
+      const newUl = newElement('ul', { class: 'eatery-results' },);
+
+      response.eateries.forEach(element => {
+        this.innerHTML = ""
+        const spanName = newElement('span', { class: 'eatery-name' }, element.name);
+        const spanDist = newElement('span', {}, element.dist + " " + "miles");
+        const btnSelect = newElement('button', {}, 'Select');
+        btnSelect.addEventListener('click', async event => {
+          event.preventDefault();
+          const href = event.currentTarget.parentNode.href;
+          await this.attributeChangedCallback('a', href, 'b');
+
+          document.querySelector('eatery-details').setAttribute('eatery-url', `${baseurl}/eateries/${element.id}`);
+        });
+        const eateryAtr = newElement('a', { class: 'select-eatery', href: getHref(resLinks, 'self') }, btnSelect);
+
+        let newLi = newElement('li', {},);
+        newLi.append(spanName);
+        newLi.append(spanDist);
+        newLi.append(eateryAtr);
+        newUl.append(newLi);
+
+      });
+      const newDiv = newElement('div', { class: 'scroll' })
+
+      if (getHref(response.links, 'prev') !== undefined) {
+        const newBtn = newElement('button', {}, '<');
+        newBtn.addEventListener('click', async event => {
+          event.preventDefault();
+          const href = event.currentTarget.parentNode.href;
+          await this.attributeChangedCallback('a', href, 'b');
+
+
+        });
+
+        const newLink = newElement('a', { rel: 'prev', href: getHref(resLinks, 'prev') }, newBtn);
+        newDiv.append(newLink);
+
+      }
+      if (getHref(response.links, 'next') !== undefined) {
+        const newBtn = newElement('button', {}, `>`);
+        newBtn.addEventListener('click', async event => {
+          event.preventDefault();
+          const href = event.currentTarget.parentNode.href;
+          await this.attributeChangedCallback('a', href, newValue);
+        });
+
+        const newLink = newElement('a', { rel: 'next', href: getHref(resLinks, 'next') }, newBtn)
+
+        newDiv.append(newLink);
+      }
+      this.append(newUl);
+      this.append(newDiv);
     }
+    catch (err) {
+      return new AppErrors().add(err);
+    }
+  }
 
     //TODO auxiliary methods
 }
