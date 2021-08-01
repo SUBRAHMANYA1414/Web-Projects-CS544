@@ -204,7 +204,7 @@ class EateryDetails extends HTMLElement {
 
       const response = await fetchData(this.getAttribute('eatery-url'));
       const menuCategories = response?.menuCategories;
-      const name = `${response.name} Menu`;
+      const name = `${response?.name} Menu`;
       const eateryHeader = newElement('h2', { class: 'eatery-name' }, name);
       const ulattribute = newElement('ul', { class: 'eatery-categories' });
       menuCategories.forEach(category => {
@@ -216,16 +216,16 @@ class EateryDetails extends HTMLElement {
           div.innerHTML = "";
           const newHeader = newElement('h2', {}, category);
           const newUl = newElement('ul', { class: 'category-items' },);
-          const menu = response.menu[category];
+          const menu = response?.menu[category];
           menu.forEach(item => {
-            const mItem = response.flatMenu[item];
+            const mItem = response?.flatMenu[item];
             const newLi = newElement('li', {},);
-            const spanName = newElement('span', { class: 'item-name' }, mItem.name);
-            const spanPrice = newElement('span', { class: 'item-price' }, mItem.price);
-            const spanDetails = newElement('span', { class: 'item-details' }, mItem.details);
+            const spanName = newElement('span', { class: 'item-name' }, mItem?.name);
+            const spanPrice = newElement('span', { class: 'item-price' }, mItem?.price);
+            const spanDetails = newElement('span', { class: 'item-details' }, mItem?.details);
             const btnBuy = newElement('button', { class: 'item-buy' }, 'Buy');
             btnBuy.addEventListener('click', event => {
-              this.buyFn(response.id, mItem.id);
+              this.buyFn(response?.id, mItem?.id);
               event.preventDefault();
             });
 
