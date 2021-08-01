@@ -79,11 +79,13 @@ class EateryResults extends HTMLElement {
         }
       }
       let response = await fetchData(mUrl);
-      const { resLinks } = response;
+      alert(mUrl+"     "+JSON.stringify(response));
+      const  resLinks  = response.links;
 
       const newUl = newElement('ul', { class: 'eatery-results' },);
 
       response.eateries.forEach(element => {
+        alert("element  "+JSON.stringify(element));
         this.innerHTML = ""
         const spanName = newElement('span', { class: 'eatery-name' }, element.name);
         const spanDist = newElement('span', {}, element.dist + " " + "miles");
