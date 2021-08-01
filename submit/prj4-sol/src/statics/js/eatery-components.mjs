@@ -71,7 +71,7 @@ class EateryResults extends HTMLElement {
       if (!oldValue) {
         mUrl = `${url}?cuisine=${newValue}`;
       } else {
-        if (name === "a") {
+        if (name === "name") {
           mUrl = oldValue
         }
         else {
@@ -93,10 +93,21 @@ class EateryResults extends HTMLElement {
         btnSelect.addEventListener('click', async event => {
           event.preventDefault();
           const href = event.currentTarget.parentNode.href;
-          await this.attributeChangedCallback('a', href, 'b');
+          await this.attributeChangedCallback('name', href, 'newVal');
 
           document.querySelector('eatery-details').setAttribute('eatery-url', `${baseurl}/eateries/${element.id}`);
         });
+
+        /*
+        {
+          event.preventDefault();
+          const href = event.currentTarget.parentNode.href;
+          await this.attributeChangedCallback('a', href, 'b');
+          await this.attributeChangedCallback('a', href, 'b');
+          document.querySelector('eatery-details').setAttribute('eatery-url', `${baseurl}/eateries/${element.id}`);
+        });
+
+        */
         const eateryAtr = newElement('a', { class: 'select-eatery', href: getHref(resLinks, 'self') }, btnSelect);
 
         let newLi = newElement('li', {},);
@@ -107,13 +118,13 @@ class EateryResults extends HTMLElement {
 
       });
       const newDiv = newElement('div', { class: 'scroll' })
-
-      if (getHref(response.links, 'prev') !== undefined) {
+// getHref(response.links, 'prev') !== undefined
+      if (getHref(response.links, 'prev')) {
         const newBtn = newElement('button', {}, '<');
         newBtn.addEventListener('click', async event => {
           event.preventDefault();
           const href = event.currentTarget.parentNode.href;
-          await this.attributeChangedCallback('a', href, 'b');
+          await this.attributeChangedCallback('name', href, 'newVal');
 
 
         });
@@ -122,12 +133,13 @@ class EateryResults extends HTMLElement {
         newDiv.append(newLink);
 
       }
-      if (getHref(response.links, 'next') !== undefined) {
+      // getHref(response.links, 'next') !== undefined
+      if (getHref(response.links, 'next')) {
         const newBtn = newElement('button', {}, `>`);
         newBtn.addEventListener('click', async event => {
           event.preventDefault();
           const href = event.currentTarget.parentNode.href;
-          await this.attributeChangedCallback('a', href, newValue);
+          await this.attributeChangedCallback('name', href, newValue);
         });
 
         const newLink = newElement('a', { rel: 'next', href: getHref(resLinks, 'next') }, newBtn)
@@ -212,6 +224,7 @@ class EateryDetails extends HTMLElement {
         const newBtn = newElement('button', { class: 'menu-category' }, category);
         newBtn.addEventListener('click', event => {
           event.preventDefault();
+          // document.getElementById("category-details");
           const div = document.querySelector('#category-details');
           div.innerHTML = "";
           const newHeader = newElement('h2', {}, category);
@@ -220,6 +233,7 @@ class EateryDetails extends HTMLElement {
           menu.forEach(item => {
             const mItem = response?.flatMenu[item];
             const newLi = newElement('li', {},);
+           //  const spanName = newElement('span', { class: 'item-name' }, response?.flatMenu[item]?.name);
             const spanName = newElement('span', { class: 'item-name' }, mItem?.name);
             const spanPrice = newElement('span', { class: 'item-price' }, mItem?.price);
             const spanDetails = newElement('span', { class: 'item-details' }, mItem?.details);
