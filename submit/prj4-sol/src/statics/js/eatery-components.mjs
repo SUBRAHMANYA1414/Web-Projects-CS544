@@ -62,37 +62,15 @@ class EateryResults extends HTMLElement {
     try {
 
 
-      let mUrl;
+     // let mUrl;
       const currLocation = await geoLoc();
       const baseurl = this.getAttribute('ws-url')
       const url = new URL(baseurl);
-      url.pathname = 'eateries' + '/' + currLocation.lat
-        + "," + currLocation.lng;
+      const eateryUrl = newValue;
+      const eatery = await get(eateryUrl);
 
-     /* if(oldValue & name === "name") {
-        mUrl = oldValue
-      } else if(oldValue) {
-        mUrl = `${url}?cuisine=${newValue}`;
-      } else if(!oldValue) {
-        mUrl = `${url}?cuisine=${newValue}`;
-      }*/
-
-      /*if (!oldValue) {
-        mUrl = `${url}?cuisine=${newValue}`;
-      } else {
-        if (name === "name") {
-          mUrl = oldValue
-        }
-        else {
-          mUrl = `${url}?cuisine=${newValue}`;
-        }
-      }*/
-
-      mUrl = oldValue ? ((name === "name") ?   oldValue:   `${url}?cuisine=${newValue}` ) :   `${url}?cuisine=${newValue}`;
-
-
-      
-      let response = await fetchData(mUrl);
+      const  mUrl = oldValue ? ((name === "name") ?   oldValue:   `${url}?cuisine=${newValue}` ) :   `${url}?cuisine=${newValue}`;
+      const response = await fetchData(mUrl);
       //alert(mUrl+"     "+JSON.stringify(response));
       const resLinks = response.links;
 
@@ -104,66 +82,12 @@ class EateryResults extends HTMLElement {
         const spanName = newElement('span', { class: 'eatery-name' }, element.name);
         const spanDist = newElement('span', {}, element.dist + " " + "miles");
         const btnSelect = newElement('button', {}, 'Select');
-
-        btnSelect.addEventListener('click', async event => {
-          event.preventDefault();
-          const href = event.currentTarget.parentNode.href;
-          await this.attributeChangedCallback('name', href, 'newVal');
-
-          document.querySelector('eatery-details').setAttribute('eatery-url', `${baseurl}/eateries/${element.id}`);
-        });
-
-        /*
-        {
-          event.preventDefault();
-          const href = event.currentTarget.parentNode.href;
-          await this.attributeChangedCallback('a', href, 'b');
-          await this.attributeChangedCallback('a', href, 'b');
-          document.querySelector('eatery-details').setAttribute('eatery-url', `${baseurl}/eateries/${element.id}`);
-        });
-
-        */
         const eateryAtr = newElement('a', { class: 'select-eatery', href: getHref(resLinks, 'self') }, btnSelect);
-
-        let newLi = newElement('li', {},);
-        newLi.append(spanName);
-        newLi.append(spanDist);
-        newLi.append(eateryAtr);
-        newUl.append(newLi);
 
       });
       const newDiv = newElement('div', { class: 'scroll' })
 // getHref(response.links, 'prev') !== undefined
-      if (getHref(response.links, 'prev')) {
-        const newBtn = newElement('button', {}, '<');
-        newBtn.addEventListener('click', async event => {
-          event.preventDefault();
-          const href = event.currentTarget.parentNode.href;
-          await this.attributeChangedCallback('name', href, 'newVal');
-
-
-        });
-
-        const newLink = newElement('a', { rel: 'prev', href: getHref(resLinks, 'prev') }, newBtn);
-        newDiv.append(newLink);
-
-      }
-      // getHref(response.links, 'next') !== undefined
-      if (getHref(response.links, 'next')) {
-        const newBtn = newElement('button', {}, `>`);
-        newBtn.addEventListener('click', async event => {
-          event.preventDefault();
-          const href = event.currentTarget.parentNode.href;
-          await this.attributeChangedCallback('name', href, newValue);
-        });
-
-        const newLink = newElement('a', { rel: 'next', href: getHref(resLinks, 'next') }, newBtn)
-
-        newDiv.append(newLink);
-      }
-      this.append(newUl);
-      this.append(newDiv);
-    }
+      
     catch (err) {
       return new AppErrors().add(err);
     }
@@ -232,45 +156,13 @@ class EateryDetails extends HTMLElement {
       const response = await fetchData(this.getAttribute('eatery-url'));
       const menuCategories = response?.menuCategories;
       const name = `${response?.name} Menu`;
-      const eateryHeader = newElement('h2', { class: 'eatery-name' }, name);
-      const ulattribute = newElement('ul', { class: 'eatery-categories' });
-      menuCategories.forEach(category => {
-        this.innerHTML = "";
         const newBtn = newElement('button', { class: 'menu-category' }, category);
         newBtn.addEventListener('click', event => {
           event.preventDefault();
           // document.getElementById("category-details");
-          const div = document.querySelector('#category-details');
-          div.innerHTML = "";
-          const newHeader = newElement('h2', {}, category);
-          const newUl = newElement('ul', { class: 'category-items' },);
-          const menu = response?.menu[category];
-          menu.forEach(item => {
-            const mItem = response?.flatMenu[item];
-            const newLi = newElement('li', {},);
-           //  const spanName = newElement('span', { class: 'item-name' }, response?.flatMenu[item]?.name);
-            const spanName = newElement('span', { class: 'item-name' }, mItem?.name);
-            const spanPrice = newElement('span', { class: 'item-price' }, mItem?.price);
-            const spanDetails = newElement('span', { class: 'item-details' }, mItem?.details);
-            const btnBuy = newElement('button', { class: 'item-buy' }, 'Buy');
-            btnBuy.addEventListener('click', event => {
-              this.buyFn(response?.id, mItem?.id);
-              event.preventDefault();
-            });
-
-            newLi.append(spanName);
-            newLi.append(spanPrice);
-            newLi.append(spanDetails);
-            newLi.append(btnBuy);
-            newUl.append(newLi);
 
           });
-          div.append(newHeader);
-          div.append(newUl);
-          div.scrollIntoView();
-
-        });
-
+          
         ulattribute.append(newBtn);
 
       });
@@ -294,22 +186,19 @@ class EateryDetails extends HTMLElement {
 //register custom-element as eatery-details
 customElements.define('eatery-details', EateryDetails);
 
-async function fetchData(url = '', data = {}) {
-
-  const response = await fetch(url, {
-    method: 'GET',
-    mode: 'cors',
-    cache: 'no-cache',
-    credentials: 'same-origin',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    redirect: 'follow',
-    referrerPolicy: 'no-referrer',
-  });
-  return response.json();
+async function get(url) {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw `cannot fetch ${url}: ${response.statusText}`;
+    }
+    return await response.json();
+  }
+  catch (err) {
+    console.error(err);
+    return {};
+  }
 }
-
 
 
 /** Given a list of links and a rel value, return the href for the
