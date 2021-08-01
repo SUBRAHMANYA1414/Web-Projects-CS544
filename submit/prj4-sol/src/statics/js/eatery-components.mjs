@@ -68,7 +68,16 @@ class EateryResults extends HTMLElement {
       const url = new URL(baseurl);
       url.pathname = 'eateries' + '/' + currLocation.lat
         + "," + currLocation.lng;
-      if (!oldValue) {
+
+     /* if(oldValue & name === "name") {
+        mUrl = oldValue
+      } else if(oldValue) {
+        mUrl = `${url}?cuisine=${newValue}`;
+      } else if(!oldValue) {
+        mUrl = `${url}?cuisine=${newValue}`;
+      }*/
+
+      /*if (!oldValue) {
         mUrl = `${url}?cuisine=${newValue}`;
       } else {
         if (name === "name") {
@@ -77,7 +86,12 @@ class EateryResults extends HTMLElement {
         else {
           mUrl = `${url}?cuisine=${newValue}`;
         }
-      }
+      }*/
+
+      mUrl = oldValue ? ((name === "name") ?   oldValue:   `${url}?cuisine=${newValue}` ) :   `${url}?cuisine=${newValue}`;
+
+
+      
       let response = await fetchData(mUrl);
       //alert(mUrl+"     "+JSON.stringify(response));
       const resLinks = response.links;
@@ -90,6 +104,7 @@ class EateryResults extends HTMLElement {
         const spanName = newElement('span', { class: 'eatery-name' }, element.name);
         const spanDist = newElement('span', {}, element.dist + " " + "miles");
         const btnSelect = newElement('button', {}, 'Select');
+
         btnSelect.addEventListener('click', async event => {
           event.preventDefault();
           const href = event.currentTarget.parentNode.href;
